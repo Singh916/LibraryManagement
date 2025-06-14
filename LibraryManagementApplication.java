@@ -11,3 +11,27 @@ public class LibraryManagementApplication {
 	}
 
 }
+
+/*
+   Model:
+       Book, BookIssue, User
+
+	   Dao:
+		  BookRepository,BookIssueRepository,UserRepository
+
+		  Book: id,name,title,author
+		  BookIssue: id,title,userId,issueDate,dueDate,returnDate
+		  User: id,name,email,role
+
+	   Controller:
+		   BookController,BookIssueController,UserController
+
+		   Get,Post:  /books
+		   Get,Put,Delete: /book/{id}
+		   Get: /book/search?title=...&author ->filtered search
+
+	   Service:
+			BookService,BookIssueService,UserService
+
+
+ */
