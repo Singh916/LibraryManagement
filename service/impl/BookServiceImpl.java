@@ -1,7 +1,9 @@
 package com.example.LibraryManagement.service.impl;
 
+import com.example.LibraryManagement.dao.BookRepository;
 import com.example.LibraryManagement.model.Book;
 import com.example.LibraryManagement.service.api.BookService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,43 +13,38 @@ import java.util.Map;
 
 @Service
 public class BookServiceImpl implements BookService {
-    private Map<Long,Book> bookStorage = new HashMap<>();
-    private Long bookSeqId=1L;
+
+    @Autowired
+    private BookRepository bookRepository;
 
     @Override
     public Book addBook(Book book) {
-         book.setId(bookSeqId++);
-         bookStorage.put(book.getId(),book);
-         return book;
+         return bookRepository.save(book);
     }
 
     @Override
     public Book getBookById(Long id) {
-        Book book=bookStorage.get(id);
-         if(book == null) {
-             throw new RuntimeException("No book found with id: "+ id);
-         }
-         return book;
+       return bookRepository.findById(id)
+               .orElseThrow(() -> new RuntimeException("Book not found with id: "+id));
     }
 
     @Override
     public List<Book> getAllBooks() {
-        return new ArrayList<>(bookStorage.values());
+        return bookRepository.findAll();
     }
 
     @Override
     public Book updateBook(Long id, Book book) {
-        Book existingBook = bookStorage.get(id);
+        Book existingBook = getBookById(id);
         existingBook.setAuthor(book.getAuthor());
         existingBook.setTitle(book.getTitle());
         existingBook.setAvailable(book.isAvailable());
         existingBook.setName(book.getName());
-        return book;
+        return bookRepository.save(existingBook);
     }
 
     @Override
     public void deleteBook(Long id) {
-        Book book =  bookStorage.get(id);
-        bookStorage.remove(id);
+        bookRepository.deleteById(id);
     }
 }
