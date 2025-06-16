@@ -1,5 +1,7 @@
 package com.example.LibraryManagement.service.impl;
 
+import com.example.LibraryManagement.dao.BookIssueRepository;
+import com.example.LibraryManagement.dao.BookRepository;
 import com.example.LibraryManagement.model.Book;
 import com.example.LibraryManagement.model.BookIssue;
 import com.example.LibraryManagement.service.api.BookIssueService;
@@ -16,47 +18,51 @@ import java.util.Map;
 @Service
 public class BookIssueServiceImpl implements BookIssueService {
 
-    private final Map<Long, BookIssue> bookIssueStorage = new HashMap<>();
-    private Long bookIssueSeq=1L;
+    @Autowired
+    private BookIssueRepository bookIssueRepository;
 
     @Autowired
-    private BookService bookService;
+    private BookRepository bookRepository;
 
     @Override
     public BookIssue issueBook(Long bookId, Long userId) {
-        Book book= bookService.getBookById(bookId);
+        Book book= bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Book not found with id: "+bookId));
         if(!book.isAvailable()) {
             throw new RuntimeException("Book is not available for issuing with id: " + bookId);
         }
         book.setAvailable(false);
-        BookIssue bookIssue = new BookIssue(bookIssueSeq++,bookId,userId, LocalDate.now(),null);
-        bookIssueStorage.put(bookIssue.getId(),bookIssue);
-        return bookIssue;
+        bookRepository.save(book);
+        BookIssue bookIssue = new BookIssue();
+        bookIssue.setBookId(bookId);
+        bookIssue.setUserId(userId);
+        bookIssue.setIssueDate(LocalDate.now());
+        return bookIssueRepository.save(bookIssue);
     }
 
     @Override
     public BookIssue returnBook(Long issueId) {
-         BookIssue bookIssue = bookIssueStorage.get(issueId);
+         BookIssue bookIssue = bookIssueRepository.findById(issueId)
+                 .orElseThrow(()->new RuntimeException("Book not found with issueId: "+issueId));
          if(bookIssue.getReturnDate()!=null) {
              throw new RuntimeException("Book already returned");
          }
-         Book book = bookService.getBookById(bookIssue.getBookId());
+         Book book = bookRepository.findById(bookIssue.getBookId())
+                 .orElseThrow(()->new RuntimeException("Book not found with bookId: "+bookIssue.getBookId()));
          book.setAvailable(true);
+         bookRepository.save(book);
          bookIssue.setReturnDate(LocalDate.now());
-         return bookIssue;
+         return bookIssueRepository.save(bookIssue);
     }
 
     @Override
     public List<BookIssue> getAllIssuedBooks() {
-        return new ArrayList<>(bookIssueStorage.values());
+        return bookIssueRepository.findAll();
     }
 
     @Override
     public BookIssue getIssueById(Long id) {
-        BookIssue bookIssue = bookIssueStorage.get(id);
-        if (bookIssue == null) {
-            throw new RuntimeException("Issue not found with id: " + id);
-        }
-        return bookIssue;
+        return bookIssueRepository.findById(id)
+                .orElseThrow(()->new RuntimeException("Book not found with issueId: "+id));
     }
 }
